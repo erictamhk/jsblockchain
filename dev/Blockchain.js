@@ -9,7 +9,14 @@ class Blockchain {
       index: this.chain.length + 1,
       timestamp: Date.now(),
       transactions: this.newTransactions,
-      nonce: nonce
+      nonce: nonce,
+      hash: hash,
+      previousBlockHash: previousBlockHash
     };
+
+    this.newTransactions = [];
+    this.chain.push(newBlock);
+
+    return newBlock;
   }
 }
