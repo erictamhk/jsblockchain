@@ -32,6 +32,8 @@ class Blockchain {
     };
 
     this.pendingTransactions.push(newTransaction);
+
+    return this.getLastBlock()["index"] + 1;
   }
 }
 
