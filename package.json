@@ -4,7 +4,8 @@
   "description": "learn blockchain by building it in javascrpt",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --watch dev -e js dev/api.js"
   },
   "repository": {
     "type": "git",
@@ -22,5 +23,8 @@
   "dependencies": {
     "express": "^4.16.4",
     "sha256": "^0.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.9"
   }
 }
