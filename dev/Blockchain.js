@@ -23,6 +23,16 @@ class Blockchain {
   getLastBlock() {
     return this.chain[this.chain.length - 1];
   }
+
+  createNewTransaction(amount, sender, recipient) {
+    const newTransaction = {
+      amount,
+      sender,
+      recipient
+    };
+
+    this.newTransactions.push(newTransaction);
+  }
 }
 
 module.exports = Blockchain;
