@@ -7,7 +7,10 @@ const currentBlockData = [
   { amount: 101, sender: "userB", recipient: "userC" },
   { amount: 102, sender: "userC", recipient: "userD" }
 ];
-const nonce = 100;
+
+const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
+console.log(nonce);
 
 const hash = bitcoin.hashBlock(previousBlockHash, currentBlockData, nonce);
+
 console.log(hash);
