@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
 const uuid = require("uuid/v1");
+const port = process.argv[2];
 
 const nodeAddress = uuid()
   .split("-")
@@ -49,6 +50,6 @@ app.get("/mine", function(req, res) {
   res.json({ note: "New block mined successfully", block: newBlock });
 });
 
-app.listen(3001, function() {
-  console.log("Listening on port 3001...");
+app.listen(port, function() {
+  console.log(`Listening on port ${port}...`);
 });
