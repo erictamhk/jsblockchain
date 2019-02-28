@@ -13,6 +13,17 @@ class Blockchain {
     this.createNewBlock(0, "BeforeGenesisBlock", "GenesisBlock");
   }
 
+  addNodeUrl(newNodeUrl) {
+    const nodeNotAlreadyPresent = this.networkNodes.indexOf(newNodeUrl) == -1;
+    const notCurrentNode = this.currentNodeUrl !== newNodeUrl;
+    if (nodeNotAlreadyPresent && notCurrentNode) {
+      this.networkNodes.push(newNodeUrl);
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   createNewBlock(nonce, previousBlockHash, hash) {
     const newBlock = {
       index: this.chain.length + 1,

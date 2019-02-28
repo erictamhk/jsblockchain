@@ -56,13 +56,11 @@ app.get("/mine", function(req, res) {
 app.post("/register-and-broadcast-node", function(req, res) {
   const newNodeUrl = req.body.newNodeUrl;
   //check the new node in the node list or not
-  if (bitcoin.networkNodes.indexOf(newNodeUrl) == -1) {
-    bitcoin.networkNodes.push(newNodeUrl);
-
+  if (bitcoin.addNodeUrl(newNodeUrl)) {
     const regNodesPromises = [];
     bitcoin.networkNodes.forEach(url => {
       const requestOptions = {
-        uri: url + "register-node",
+        uri: url + "/register-node",
         method: "POST",
         body: { newNodeUrl },
         json: true
@@ -74,7 +72,7 @@ app.post("/register-and-broadcast-node", function(req, res) {
     Promise.all(regNodesPromises)
       .then(data => {
         const bulkRegisterOptions = {
-          uri: newNodeUrl + "register-nodes-bulk",
+          uri: newNodeUrl + "/register-nodes-bulk",
           method: "POST",
           body: {
             allNetworkNodes: [...bitcoin.networkNodes, bitcoin.currentNodeUrl]
@@ -85,19 +83,37 @@ app.post("/register-and-broadcast-node", function(req, res) {
         return rp(bulkRegisterOptions);
       })
       .then(data => {
-        res.json({ node: "New node registered with network successfully." });
+        res.json({ note: "New node registered with network successfully." });
+      })
+      .catch(err => {
+        console.log(err);
+        res.json({ note: "New node registered error!" });
       });
+  } else {
+    res.json({ note: "No node registered, already in the list!" });
   }
 });
 
 //register a node with the network
 app.post("/register-node", function(req, res) {
-  console.log(req.body);
+  const newNodeUrl = req.body.newNodeUrl;
+
+  if (bitcoin.addNodeUrl(newNodeUrl)) {
+    res.json({ note: "New node registered successfully with node." });
+  } else {
+    res.json({ note: "No node registered." });
+  }
 });
 
 //register multiple nodes at once
 app.post("/register-nodes-bulk", function(req, res) {
-  console.log(req.body);
+  const allNetworkNodes = req.body.allNetworkNodes;
+
+  allNetworkNodes.forEach(url => {
+    bitcoin.addNodeUrl(url);
+  });
+
+  res.json({ note: "Bulk registeration successful." });
 });
 
 app.listen(port, function() {
