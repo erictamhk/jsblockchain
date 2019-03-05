@@ -80,7 +80,7 @@ app.get("/mine", function(req, res) {
   const requestPromises = [];
   bitcoin.networkNodes.forEach(url => {
     const requestOptions = {
-      uri: url + "/recieve-new-block",
+      uri: url + "/receive-new-block",
       method: "POST",
       body: { newBlock },
       json: true
