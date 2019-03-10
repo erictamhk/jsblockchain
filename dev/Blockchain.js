@@ -3,10 +3,18 @@ const uuid = require("uuid/v1");
 const currentNodeUrl = process.argv[3];
 
 class Block {
-  constructor(index, timestamp, data, nonce, previousHash = "") {
+  constructor(
+    index,
+    timestamp,
+    data,
+    difficulty,
+    nonce = 0,
+    previousHash = ""
+  ) {
     this.index = index;
     this.timestamp = timestamp;
     this.data = data;
+    this.difficulty = difficulty;
     this.nonce = nonce;
     this.previousHash = previousHash;
     this.hash = "";
@@ -18,8 +26,24 @@ class Block {
       this.previousHash +
       this.timestamp +
       this.nonce +
+      this.difficulty +
       JSON.stringify(this.data);
     return sha256(dataAsString);
+  }
+
+  isValid() {
+    if (this.hash !== this.calculateHash()) {
+      return false;
+    }
+
+    if (
+      this.hash.substring(0, this.difficulty) !==
+      Array(difficulty + 1).join("0")
+    ) {
+      return false;
+    }
+
+    return true;
   }
 }
 
@@ -31,10 +55,13 @@ class Blockchain {
     this.currentNodeUrl = currentNodeUrl;
     this.networkNodes = [];
 
+    this.currentDifficulty = 4;
+
     this.genesisBlockData = {
       index: 0,
       timestamp: Date.now(),
       data: "GenesisBlock",
+      difficulty: 0,
       nonce: 0,
       previousHash: "BeforeGenesisBlock",
       hash: "GenesisBlock"
@@ -53,6 +80,7 @@ class Blockchain {
       this.genesisBlockData.index,
       this.genesisBlockData.timestamp,
       this.genesisBlockData.data,
+      this.genesisBlockData.difficulty,
       this.genesisBlockData.nonce,
       this.genesisBlockData.previousHash
     );
@@ -62,6 +90,23 @@ class Blockchain {
     newBlock.previousHash = this.getLastBlock().hash;
     newBlock.hash = newBlock.calculateHash();
     this.chain.push(newBlock);
+  }
+
+  mineNewBlock() {
+    const newBlock = new Block(
+      this.getLastBlock().index + 1,
+      Date.now(),
+      this.pendingTransactions,
+      this.currentDifficulty,
+      -1,
+      this.getLastBlock().hash
+    );
+    do {
+      newBlock.nonce++;
+      newBlock.hash = newBlock.calculateHash();
+    } while (newBlock.isValid());
+
+    return newBlock;
   }
 
   addNodeUrl(newNodeUrl) {
@@ -168,7 +213,7 @@ class Blockchain {
       return false;
     }
 
-    return validChain;
+    return true;
   }
 
   getBlock(blockHash) {
