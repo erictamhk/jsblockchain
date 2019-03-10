@@ -189,6 +189,7 @@ app.post("/register-nodes-bulk", function(req, res) {
   res.json({ note: "Bulk registeration successful." });
 });
 
+//this consesnsus algo is for longest chain rule
 app.get("/consensus", function(req, res) {
   const requestPromises = [];
   bitcoin.networkNodes.forEach(url => {
