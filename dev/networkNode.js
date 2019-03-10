@@ -276,7 +276,22 @@ app.get("/transaction/:transactionId", function(req, res) {
 });
 
 app.get("/address/:address", function(req, res) {
-  res.send(bitcoin);
+  const address = req.params.address;
+  const addressData = bitcoin.getAddressData(address);
+
+  res.json({
+    note: "address data.",
+    addressData
+  });
+});
+
+app.get("/alladdress", function(req, res) {
+  const allAddress = bitcoin.getAllAddress();
+
+  res.json({
+    note: "all addresses.",
+    allAddress
+  });
 });
 
 app.listen(port, function() {

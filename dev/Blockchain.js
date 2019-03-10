@@ -180,6 +180,27 @@ class Blockchain {
       addressBalance: balance
     };
   }
+
+  getAllAddress() {
+    const addresses = [];
+    this.chain.forEach(block => {
+      block.transactions.forEach(transaction => {
+        const { sender, recipient } = transaction;
+        if (
+          addresses.indexOf(sender) === -1 &&
+          addresses.indexOf(recipient) === -1
+        ) {
+          if (addresses.indexOf(sender) === -1 && sender !== "00") {
+            addresses.push(sender);
+          } else if (addresses.indexOf(recipient) === -1) {
+            addresses.push(recipient);
+          }
+        }
+      });
+    });
+
+    return addresses;
+  }
 }
 
 module.exports = Blockchain;
