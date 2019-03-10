@@ -2,6 +2,16 @@ const sha256 = require("sha256");
 const uuid = require("uuid/v1");
 const currentNodeUrl = process.argv[3];
 
+class Block {
+  constructor(index, timestamp, data, previousHash = "") {
+    this.index = index;
+    this.timestamp = timestamp;
+    this.data = data;
+    this.previousHash = previousHash;
+    this.hash = "";
+  }
+}
+
 class Blockchain {
   constructor() {
     this.chain = [];
@@ -10,8 +20,18 @@ class Blockchain {
     this.currentNodeUrl = currentNodeUrl;
     this.networkNodes = [];
 
+    this.genesisBlockData = {
+      nonce: 0,
+      previousHash: "BeforeGenesisBlock",
+      hash: "GenesisBlock"
+    };
+
     //create the Genesis Block
-    this.createNewBlock(0, "BeforeGenesisBlock", "GenesisBlock");
+    this.createNewBlock(
+      this.genesisBlockData.nonce,
+      this.genesisBlockData.previousHash,
+      this.genesisBlockData.hash
+    );
   }
 
   addNodeUrl(newNodeUrl) {
@@ -114,9 +134,9 @@ class Blockchain {
 
     //check the genesisBlock
     const genesisBlock = chain[0];
-    const correctNonce = genesisBlock["nonce"] === 0;
+    const correctNonce = genesisBlock["nonce"] === this.genesisBlockData.nonce;
     const correctPreviousBlockHash =
-      genesisBlock["previousBlockHash"] === "BeforeGenesisBlock";
+      genesisBlock["previousBlockHash"] === this.genesisBlockData.previousHash;
     const correctTransactions = genesisBlock["transactions"].length === 0;
     if (!(correctNonce && correctPreviousBlockHash && correctTransactions)) {
       validChain = false;
