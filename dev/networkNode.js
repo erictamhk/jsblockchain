@@ -237,6 +237,18 @@ app.get("/consensus", function(req, res) {
   });
 });
 
+app.get("/block/:blockHash", function(req, res) {
+  res.send(bitcoin);
+});
+
+app.get("/transaction/:transactionId", function(req, res) {
+  res.send(bitcoin);
+});
+
+app.get("/address/:address", function(req, res) {
+  res.send(bitcoin);
+});
+
 app.listen(port, function() {
   console.log(`Listening on port ${port}...`);
 });
