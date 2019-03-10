@@ -3,10 +3,11 @@ const uuid = require("uuid/v1");
 const currentNodeUrl = process.argv[3];
 
 class Block {
-  constructor(index, timestamp, data, previousHash = "") {
+  constructor(index, timestamp, data, nonce, previousHash = "") {
     this.index = index;
     this.timestamp = timestamp;
     this.data = data;
+    this.nonce = nonce;
     this.previousHash = previousHash;
     this.hash = "";
   }
@@ -31,6 +32,9 @@ class Blockchain {
     this.networkNodes = [];
 
     this.genesisBlockData = {
+      index: 0,
+      timestamp: Date.now(),
+      data: "GenesisBlock",
       nonce: 0,
       previousHash: "BeforeGenesisBlock",
       hash: "GenesisBlock"
@@ -42,6 +46,22 @@ class Blockchain {
       this.genesisBlockData.previousHash,
       this.genesisBlockData.hash
     );
+  }
+
+  createGenesisBlock() {
+    return new Block(
+      this.genesisBlockData.index,
+      this.genesisBlockData.timestamp,
+      this.genesisBlockData.data,
+      this.genesisBlockData.nonce,
+      this.genesisBlockData.previousHash
+    );
+  }
+
+  addBlock(newBlock) {
+    newBlock.previousHash = this.getLastBlock().hash;
+    newBlock.hash = newBlock.calculateHash();
+    this.chain.push(newBlock);
   }
 
   addNodeUrl(newNodeUrl) {
@@ -114,6 +134,7 @@ class Blockchain {
     let validChain = true;
     const self = this;
 
+    //check the chain without genesisBlock
     chain.forEach((val, idx, arr) => {
       if (idx > 0) {
         const currentBlock = val;
