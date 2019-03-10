@@ -131,37 +131,32 @@ class Blockchain {
   }
 
   chainIsValid(chain) {
-    let validChain = true;
-    const self = this;
-
     //check the chain without genesisBlock
-    chain.forEach((val, idx, arr) => {
-      if (idx > 0) {
-        const currentBlock = val;
-        const prevBlock = arr[idx - 1];
-        const blockHash = self.hashBlock(
-          prevBlock["hash"],
-          {
-            transactions: currentBlock["transactions"],
-            index: currentBlock["index"]
-          },
-          currentBlock["nonce"]
-        );
+    for (let i = 1; i < chain.length; i++) {
+      const currentBlock = chain[i];
+      const prevBlock = chain[idx - 1];
+      const blockHash = this.hashBlock(
+        prevBlock["hash"],
+        {
+          transactions: currentBlock["transactions"],
+          index: currentBlock["index"]
+        },
+        currentBlock["nonce"]
+      );
 
-        //check the previous hash
-        if (currentBlock["previousBlockHash"] !== prevBlock["hash"]) {
-          validChain = false;
-        }
-        //check the hash data
-        if (blockHash !== currentBlock["hash"]) {
-          validChain = false;
-        }
-        //check the proof of work
-        if (blockHash.substring(0, 4) !== "0000") {
-          validChain = false;
-        }
+      //check the previous hash
+      if (currentBlock["previousBlockHash"] !== prevBlock["hash"]) {
+        return false;
       }
-    });
+      //check the hash data
+      if (blockHash !== currentBlock["hash"]) {
+        return false;
+      }
+      //check the proof of work
+      if (blockHash.substring(0, 4) !== "0000") {
+        return false;
+      }
+    }
 
     //check the genesisBlock
     const genesisBlock = chain[0];
@@ -170,7 +165,7 @@ class Blockchain {
       genesisBlock["previousBlockHash"] === this.genesisBlockData.previousHash;
     const correctTransactions = genesisBlock["transactions"].length === 0;
     if (!(correctNonce && correctPreviousBlockHash && correctTransactions)) {
-      validChain = false;
+      return false;
     }
 
     return validChain;
