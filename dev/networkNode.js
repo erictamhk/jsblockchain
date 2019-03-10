@@ -254,7 +254,25 @@ app.get("/block/:blockHash", function(req, res) {
 });
 
 app.get("/transaction/:transactionId", function(req, res) {
-  res.send(bitcoin);
+  const transactionId = req.params.transactionId;
+  const {
+    transaction: correctTransaction,
+    block: correctBlock
+  } = bitcoin.getTransaction(transactionId);
+
+  if (correctTransaction !== null) {
+    res.json({
+      note: "Transaction found!",
+      transaction: correctTransaction,
+      block: correctBlock
+    });
+  } else {
+    res.json({
+      note: "Transaction not found!",
+      transaction: null,
+      block: null
+    });
+  }
 });
 
 app.get("/address/:address", function(req, res) {
