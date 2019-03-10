@@ -223,14 +223,14 @@ app.get("/consensus", function(req, res) {
 
     if (newLongestChain === null) {
       res.json({
-        note: "Current chain has not been replaced",
+        note: "Current chain has not been replaced!",
         chain: bitcoin.chain
       });
     } else {
       bitcoin.chain = newLongestChain;
       bitcoin.pendingTransactions = newPendingTransactions;
       res.json({
-        note: "Current chain has been replaced",
+        note: "Current chain has been replaced!",
         chain: bitcoin.chain
       });
     }
@@ -238,7 +238,19 @@ app.get("/consensus", function(req, res) {
 });
 
 app.get("/block/:blockHash", function(req, res) {
-  res.send(bitcoin);
+  const blockHash = req.params.blockHash;
+  const correctBlock = bitcoin.getBlock(blockHash);
+  if (correctBlock !== null) {
+    res.json({
+      note: "Block found!",
+      block: correctBlock
+    });
+  } else {
+    res.json({
+      note: "Block not found!",
+      block: null
+    });
+  }
 });
 
 app.get("/transaction/:transactionId", function(req, res) {
