@@ -10,6 +10,16 @@ class Block {
     this.previousHash = previousHash;
     this.hash = "";
   }
+
+  calculateHash() {
+    const dataAsString =
+      this.index +
+      this.previousHash +
+      this.timestamp +
+      this.nonce +
+      JSON.stringify(this.data);
+    return sha256(dataAsString);
+  }
 }
 
 class Blockchain {
