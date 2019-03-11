@@ -111,20 +111,20 @@ class Blockchain {
 
   addNewBlock(newBlock) {
     const lastBlock = this.getLastBlock();
-    const correctHash = lastBlock.hash === newBlock.previousBlockHash;
+    const correctHash = lastBlock.hash === newBlock.previousHash;
     const correctIndex = lastBlock["index"] + 1 === newBlock["index"];
-
     if (correctHash && correctIndex) {
       this.pendingTransactions = [];
       this.chain.push(newBlock);
 
-      return newBlock;
+      return true;
     } else {
       return false;
     }
   }
 
   mineNewBlock() {
+    let nonce = -1;
     const newBlock = new Block(
       this.getLastBlock().index + 1,
       Date.now(),
@@ -134,9 +134,10 @@ class Blockchain {
       this.getLastBlock().hash
     );
     do {
-      newBlock.nonce++;
+      nonce++;
+      newBlock.nonce = nonce;
       newBlock.hash = newBlock.calculateHash();
-    } while (newBlock.isValid());
+    } while (!newBlock.isValid());
 
     return newBlock;
   }
@@ -197,27 +198,39 @@ class Blockchain {
   chainIsValid(chain) {
     //check the chain without genesisBlock
     for (let i = 1; i < chain.length; i++) {
-      const currentBlock = chain[i];
-      const prevBlock = chain[idx - 1];
-      const blockHash = this.hashBlock(
-        prevBlock["hash"],
-        {
-          transactions: currentBlock["transactions"],
-          index: currentBlock["index"]
-        },
-        currentBlock["nonce"]
+      const currentBlockData = chain[i];
+
+      const transactionsData = currentBlockData.transactions;
+      const transactionsObjs = [];
+      transactionsData.forEach(tran => {
+        transactionsObjs.push(
+          new Transaction(
+            tran.fromAddress,
+            tran.toAddress,
+            tran.amount,
+            tran.remark,
+            tran.transactionId,
+            tran.timestamp
+          )
+        );
+      });
+      const currentBlock = new Block(
+        currentBlockData.index,
+        currentBlockData.timestamp,
+        transactionsObjs,
+        currentBlockData.difficulty,
+        currentBlockData.nonce,
+        currentBlockData.previousHash
       );
+      currentBlock.hash = currentBlockData.hash;
+
+      const prevBlock = chain[i - 1];
 
       //check the previous hash
-      if (currentBlock["previousBlockHash"] !== prevBlock["hash"]) {
+      if (currentBlock["previousHash"] !== prevBlock["hash"]) {
         return false;
       }
-      //check the hash data
-      if (blockHash !== currentBlock["hash"]) {
-        return false;
-      }
-      //check the proof of work
-      if (blockHash.substring(0, 4) !== "0000") {
+      if (!currentBlock.isValid()) {
         return false;
       }
     }

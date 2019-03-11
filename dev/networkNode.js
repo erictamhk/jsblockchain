@@ -76,63 +76,89 @@ app.post("/transaction", function(req, res) {
 });
 
 app.get("/mine", function(req, res) {
-  const lastBlock = bitcoin.getLastBlock();
-  const previousBlockHash = lastBlock["hash"];
-  const currentBlockData = {
-    transactions: bitcoin.pendingTransactions,
-    index: lastBlock["index"] + 1
-  };
-  const nonce = bitcoin.proofOfWork(previousBlockHash, currentBlockData);
-  const blockHash = bitcoin.hashBlock(
-    previousBlockHash,
-    currentBlockData,
-    nonce
-  );
-
-  const newBlock = bitcoin.createNewBlock(nonce, previousBlockHash, blockHash);
-
-  const requestPromises = [];
-  bitcoin.networkNodes.forEach(url => {
-    const requestOptions = {
-      uri: url + "/receive-new-block",
-      method: "POST",
-      body: { newBlock },
-      json: true
-    };
-
-    requestPromises.push(rp(requestOptions));
-  });
-  Promise.all(requestPromises)
-    .then(data => {
+  //step 1
+  //mine a new block using pendingTransactions
+  const newBlock = bitcoin.mineNewBlock();
+  if (bitcoin.addNewBlock(newBlock)) {
+    //step 2
+    //broadcast the new block to the network
+    const requestPromises = [];
+    bitcoin.networkNodes.forEach(url => {
       const requestOptions = {
-        uri: bitcoin.currentNodeUrl + "/transaction/broadcast",
+        uri: url + "/receive-new-block",
         method: "POST",
-        body: { amount: 12.5, fromAddress: "00", toAddress: nodeAddress },
+        body: { newBlock },
         json: true
       };
-      return rp(requestOptions);
-    })
-    .then(data => {
-      res.json({
-        note: "New block mined & broadcast successfully",
-        block: newBlock
-      });
-    })
-    .catch(err => {
-      console.log(err);
+
+      requestPromises.push(rp(requestOptions));
     });
+    Promise.all(requestPromises)
+      .then(data => {
+        //step 3
+        //add a reward transaction to the network
+        const requestOptions = {
+          uri: bitcoin.currentNodeUrl + "/transaction/broadcast",
+          method: "POST",
+          body: {
+            amount: bitcoin.rewardData.amount,
+            fromAddress: bitcoin.rewardData.fromAddress,
+            toAddress: nodeAddress,
+            remark: "Reward Transaction"
+          },
+          json: true
+        };
+        return rp(requestOptions);
+      })
+      .then(data => {
+        res.json({
+          note: "New block mined & broadcast successfully",
+          block: newBlock
+        });
+      })
+      .catch(err => {
+        console.log(err);
+
+        res.json({
+          note: "mining error: " + err,
+          block: null
+        });
+      });
+  } else {
+    res.json({
+      note: "mining error: no block added!",
+      block: null
+    });
+  }
 });
 
 app.post("/receive-new-block", function(req, res) {
-  console.log(req.body);
-  const newBlock = req.body.newBlock;
-  const lastBlock = bitcoin.getLastBlock();
-  const correctHash = lastBlock.hash === newBlock.previousBlockHash;
-  const correctIndex = lastBlock["index"] + 1 === newBlock["index"];
+  const newBlockData = req.body.newBlock;
+  const transactionsData = newBlockData.transactions;
+  const transactionsObjs = [];
+  transactionsData.forEach(tran => {
+    transactionsObjs.push(
+      new Transaction(
+        tran.fromAddress,
+        tran.toAddress,
+        tran.amount,
+        tran.remark,
+        tran.transactionId,
+        tran.timestamp
+      )
+    );
+  });
+  const newBlock = new Block(
+    newBlockData.index,
+    newBlockData.timestamp,
+    transactionsObjs,
+    newBlockData.difficulty,
+    newBlockData.nonce,
+    newBlockData.previousHash
+  );
+  newBlock.hash = newBlock.calculateHash();
 
-  if (correctHash && correctIndex) {
-    bitcoin.chain.push(newBlock);
-    bitcoin.pendingTransactions = [];
+  if (bitcoin.addNewBlock(newBlock)) {
     res.json({ note: "New block received and accepted.", newBlock });
   } else {
     res.json({ note: "New block rejected.", newBlock });
@@ -216,39 +242,46 @@ app.get("/consensus", function(req, res) {
     requestPromises.push(rp(requestOptions));
   });
 
-  Promise.all(requestPromises).then(blockchains => {
-    const currentChainLength = bitcoin.chainIsValid(bitcoin.chain)
-      ? bitcoin.chain.length
-      : 0;
-    let maxChainLength = currentChainLength;
-    let newLongestChain = null;
-    let newPendingTransactions = null;
+  Promise.all(requestPromises)
+    .then(blockchains => {
+      const currentChainLength = bitcoin.chainIsValid(bitcoin.chain)
+        ? bitcoin.chain.length
+        : 0;
+      let maxChainLength = currentChainLength;
+      let newLongestChain = null;
+      let newPendingTransactions = null;
 
-    blockchains.forEach(blockchain => {
-      if (
-        blockchain.chain.length > maxChainLength &&
-        bitcoin.chainIsValid(blockchain.chain)
-      ) {
-        maxChainLength = blockchain.chain.length;
-        newLongestChain = blockchain.chain;
-        newPendingTransactions = blockchain.pendingTransactions;
+      blockchains.forEach(blockchain => {
+        if (
+          blockchain.chain.length > maxChainLength &&
+          bitcoin.chainIsValid(blockchain.chain)
+        ) {
+          maxChainLength = blockchain.chain.length;
+          newLongestChain = blockchain.chain;
+          newPendingTransactions = blockchain.pendingTransactions;
+        }
+      });
+
+      if (newLongestChain === null) {
+        res.json({
+          note: "Current chain has not been replaced!",
+          chain: bitcoin.chain
+        });
+      } else {
+        bitcoin.chain = newLongestChain;
+        bitcoin.pendingTransactions = newPendingTransactions;
+        res.json({
+          note: "Current chain has been replaced!",
+          chain: bitcoin.chain
+        });
       }
+    })
+    .catch(err => {
+      res.json({
+        note: "consensus got error! " + err,
+        chain: null
+      });
     });
-
-    if (newLongestChain === null) {
-      res.json({
-        note: "Current chain has not been replaced!",
-        chain: bitcoin.chain
-      });
-    } else {
-      bitcoin.chain = newLongestChain;
-      bitcoin.pendingTransactions = newPendingTransactions;
-      res.json({
-        note: "Current chain has been replaced!",
-        chain: bitcoin.chain
-      });
-    }
-  });
 });
 
 app.get("/block/:blockHash", function(req, res) {
