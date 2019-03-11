@@ -41,6 +41,7 @@ app.post("/transaction/broadcast", function(req, res) {
         toAddress: newTransaction.toAddress,
         amount: newTransaction.amount,
         remark: newTransaction.remark,
+        transactionId: newTransaction.transactionId,
         timestamp: newTransaction.timestamp
       },
       json: true
@@ -65,6 +66,7 @@ app.post("/transaction", function(req, res) {
     req.body.toAddress,
     req.body.amount,
     req.body.remark,
+    req.body.transactionId,
     req.body.timestamp
   );
   const blockIndex = bitcoin.addTransactionToPendingTransactions(

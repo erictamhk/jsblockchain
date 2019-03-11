@@ -8,16 +8,17 @@ class Transaction {
     toAddress,
     amount,
     remark = "",
+    transactionId = uuid()
+      .split("-")
+      .join(""),
     timestamp = Date.now()
   ) {
     this.fromAddress = fromAddress;
     this.toAddress = toAddress;
     this.amount = amount;
     this.remark = remark;
+    this.transactionId = transactionId;
     this.timestamp = timestamp;
-    this.transactionId = uuid()
-      .split("-")
-      .join("");
   }
 
   calculateHash() {
@@ -86,6 +87,10 @@ class Blockchain {
     this.networkNodes = [];
 
     this.currentDifficulty = 4;
+    this.rewardData = {
+      amount: 12.5,
+      fromAddress: "00"
+    };
 
     //create the Genesis Block
     const genesisBlock = this.createGenesisBlock();
