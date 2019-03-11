@@ -10,9 +10,9 @@ const nodeAddress = uuid()
   .split("-")
   .join("");
 
-const blockchain = require("./Blockchain");
+const { Block, Transaction, Blockchain } = require("./Blockchain");
 
-const bitcoin = new blockchain();
+const bitcoin = new Blockchain();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));

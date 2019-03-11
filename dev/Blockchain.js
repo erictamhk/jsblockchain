@@ -2,18 +2,48 @@ const sha256 = require("sha256");
 const uuid = require("uuid/v1");
 const currentNodeUrl = process.argv[3];
 
+class Transaction {
+  constructor(
+    fromAddress,
+    toAddress,
+    amount,
+    remark = "",
+    timestamp = Date.now()
+  ) {
+    this.fromAddress = fromAddress;
+    this.toAddress = toAddress;
+    this.amount = amount;
+    this.remark = remark;
+    this.timestamp = timestamp;
+    this.transactionId = uuid()
+      .split("-")
+      .join("");
+  }
+
+  calculateHash() {
+    const dataAsString =
+      this.fromAddress +
+      this.toAddress +
+      this.amount +
+      this.remark +
+      this.timestamp +
+      this.transactionId;
+    return sha256(dataAsString);
+  }
+}
+
 class Block {
   constructor(
     index,
     timestamp,
-    data,
+    transactions,
     difficulty,
     nonce = 0,
     previousHash = ""
   ) {
     this.index = index;
     this.timestamp = timestamp;
-    this.data = data;
+    this.transactions = transactions;
     this.difficulty = difficulty;
     this.nonce = nonce;
     this.previousHash = previousHash;
@@ -23,11 +53,11 @@ class Block {
   calculateHash() {
     const dataAsString =
       this.index +
-      this.previousHash +
       this.timestamp +
-      this.nonce +
       this.difficulty +
-      JSON.stringify(this.data);
+      this.nonce +
+      this.previousHash +
+      JSON.stringify(this.transactions);
     return sha256(dataAsString);
   }
 
@@ -294,4 +324,4 @@ class Blockchain {
   }
 }
 
-module.exports = Blockchain;
+module.exports = { Block, Transaction, Blockchain };
