@@ -219,8 +219,9 @@ class Blockchain {
 
     //check the Genesis block
     const genesisBlock = chain[0];
-    const realGenesis = JSON.stringify(this.createGenesisBlock());
-    if (realGenesis !== JSON.stringify(genesisBlock)) {
+    const realGenesis = this.createGenesisBlock();
+    realGenesis.hash = realGenesis.calculateHash();
+    if (JSON.stringify(realGenesis) !== JSON.stringify(genesisBlock)) {
       return false;
     }
 
