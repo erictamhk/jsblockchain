@@ -278,7 +278,10 @@ class Blockchain {
           addresses.indexOf(fromAddress) === -1 &&
           addresses.indexOf(toAddress) === -1
         ) {
-          if (addresses.indexOf(fromAddress) === -1 && fromAddress !== "00") {
+          if (
+            addresses.indexOf(fromAddress) === -1 &&
+            fromAddress !== this.rewardData.fromAddress
+          ) {
             addresses.push(fromAddress);
           } else if (addresses.indexOf(toAddress) === -1) {
             addresses.push(toAddress);
