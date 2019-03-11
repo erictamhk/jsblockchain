@@ -68,7 +68,7 @@ class Block {
 
     if (
       this.hash.substring(0, this.difficulty) !==
-      Array(difficulty + 1).join("0")
+      Array(this.difficulty + 1).join("0")
     ) {
       return false;
     }
@@ -87,39 +87,36 @@ class Blockchain {
 
     this.currentDifficulty = 4;
 
-    this.genesisBlockData = {
-      index: 0,
-      timestamp: Date.now(),
-      data: "GenesisBlock",
-      difficulty: 0,
-      nonce: 0,
-      previousHash: "BeforeGenesisBlock",
-      hash: "GenesisBlock"
-    };
-
     //create the Genesis Block
-    this.createNewBlock(
-      this.genesisBlockData.nonce,
-      this.genesisBlockData.previousHash,
-      this.genesisBlockData.hash
-    );
+    const genesisBlock = this.createGenesisBlock();
+    genesisBlock.hash = genesisBlock.calculateHash();
+    this.chain.push(genesisBlock);
   }
 
   createGenesisBlock() {
     return new Block(
-      this.genesisBlockData.index,
-      this.genesisBlockData.timestamp,
-      this.genesisBlockData.data,
-      this.genesisBlockData.difficulty,
-      this.genesisBlockData.nonce,
-      this.genesisBlockData.previousHash
+      0,
+      Date.parse("2019-01-01"),
+      [],
+      0,
+      0,
+      "BeforeGenesisBlock"
     );
   }
 
-  addBlock(newBlock) {
-    newBlock.previousHash = this.getLastBlock().hash;
-    newBlock.hash = newBlock.calculateHash();
-    this.chain.push(newBlock);
+  addNewBlock(newBlock) {
+    const lastBlock = this.getLastBlock();
+    const correctHash = lastBlock.hash === newBlock.previousBlockHash;
+    const correctIndex = lastBlock["index"] + 1 === newBlock["index"];
+
+    if (correctHash && correctIndex) {
+      this.pendingTransactions = [];
+      this.chain.push(newBlock);
+
+      return newBlock;
+    } else {
+      return false;
+    }
   }
 
   mineNewBlock() {
@@ -168,19 +165,6 @@ class Blockchain {
 
   getLastBlock() {
     return this.chain[this.chain.length - 1];
-  }
-
-  createNewTransaction(amount, sender, recipient) {
-    const newTransaction = {
-      amount,
-      sender,
-      recipient,
-      transactionId: uuid()
-        .split("-")
-        .join("")
-    };
-
-    return newTransaction;
   }
 
   addTransactionToPendingTransactions(transactionObj) {
@@ -233,13 +217,10 @@ class Blockchain {
       }
     }
 
-    //check the genesisBlock
+    //check the Genesis block
     const genesisBlock = chain[0];
-    const correctNonce = genesisBlock["nonce"] === this.genesisBlockData.nonce;
-    const correctPreviousBlockHash =
-      genesisBlock["previousBlockHash"] === this.genesisBlockData.previousHash;
-    const correctTransactions = genesisBlock["transactions"].length === 0;
-    if (!(correctNonce && correctPreviousBlockHash && correctTransactions)) {
+    const realGenesis = JSON.stringify(this.createGenesisBlock());
+    if (realGenesis !== JSON.stringify(genesisBlock)) {
       return false;
     }
 
@@ -278,8 +259,8 @@ class Blockchain {
     this.chain.forEach(block => {
       block.transactions.forEach(transaction => {
         if (
-          transaction.sender === address ||
-          transaction.recipient === address
+          transaction.fromAddress === address ||
+          transaction.toAddress === address
         ) {
           addressTransactions.push(transaction);
         }
@@ -288,10 +269,10 @@ class Blockchain {
 
     let balance = 0;
     addressTransactions.forEach(transaction => {
-      if (transaction.recipient === address) {
+      if (transaction.toAddress === address) {
         balance += transaction.amount;
       }
-      if (transaction.sender === address) {
+      if (transaction.fromAddress === address) {
         balance -= transaction.amount;
       }
     });
@@ -306,15 +287,15 @@ class Blockchain {
     const addresses = [];
     this.chain.forEach(block => {
       block.transactions.forEach(transaction => {
-        const { sender, recipient } = transaction;
+        const { fromAddress, toAddress } = transaction;
         if (
-          addresses.indexOf(sender) === -1 &&
-          addresses.indexOf(recipient) === -1
+          addresses.indexOf(fromAddress) === -1 &&
+          addresses.indexOf(toAddress) === -1
         ) {
-          if (addresses.indexOf(sender) === -1 && sender !== "00") {
-            addresses.push(sender);
-          } else if (addresses.indexOf(recipient) === -1) {
-            addresses.push(recipient);
+          if (addresses.indexOf(fromAddress) === -1 && fromAddress !== "00") {
+            addresses.push(fromAddress);
+          } else if (addresses.indexOf(toAddress) === -1) {
+            addresses.push(toAddress);
           }
         }
       });
