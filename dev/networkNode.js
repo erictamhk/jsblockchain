@@ -21,22 +21,13 @@ app.get("/blockchain", function(req, res) {
   res.send(bitcoin);
 });
 
-app.post("/transaction", function(req, res) {
-  console.log(req.body);
-  const newTransaction = req.body;
-  const blockIndex = bitcoin.addTransactionToPendingTransactions(
-    newTransaction
-  );
-  res.json({ note: `Transaction will be added in block ${blockIndex}.` });
-});
-
+// add a new transaction and broadcast to the network
 app.post("/transaction/broadcast", function(req, res) {
-  console.log(req.body);
-  //res.send(`The amount of the transaction is ${req.body.amount} bitcoin!`);
-  const newTransaction = bitcoin.createNewTransaction(
+  const newTransaction = new Transaction(
+    req.body.fromAddress,
+    req.body.toAddress,
     req.body.amount,
-    req.body.sender,
-    req.body.recipient
+    req.body.remark
   );
   bitcoin.addTransactionToPendingTransactions(newTransaction);
 
@@ -45,7 +36,13 @@ app.post("/transaction/broadcast", function(req, res) {
     const requestOptions = {
       uri: url + "/transaction",
       method: "POST",
-      body: newTransaction,
+      body: {
+        fromAddress: newTransaction.fromAddress,
+        toAddress: newTransaction.toAddress,
+        amount: newTransaction.amount,
+        remark: newTransaction.remark,
+        timestamp: newTransaction.timestamp
+      },
       json: true
     };
 
@@ -59,6 +56,21 @@ app.post("/transaction/broadcast", function(req, res) {
       console.log(err);
       res.json({ note: "Transaction created and broadcast error!" });
     });
+});
+
+// receive transaction from the network and add to the pending transactions
+app.post("/transaction", function(req, res) {
+  const newTransaction = new Transaction(
+    req.body.fromAddress,
+    req.body.toAddress,
+    req.body.amount,
+    req.body.remark,
+    req.body.timestamp
+  );
+  const blockIndex = bitcoin.addTransactionToPendingTransactions(
+    newTransaction
+  );
+  res.json({ note: `Transaction will be added in block ${blockIndex}.` });
 });
 
 app.get("/mine", function(req, res) {
@@ -93,7 +105,7 @@ app.get("/mine", function(req, res) {
       const requestOptions = {
         uri: bitcoin.currentNodeUrl + "/transaction/broadcast",
         method: "POST",
-        body: { amount: 12.5, sender: "00", recipient: nodeAddress },
+        body: { amount: 12.5, fromAddress: "00", toAddress: nodeAddress },
         json: true
       };
       return rp(requestOptions);
