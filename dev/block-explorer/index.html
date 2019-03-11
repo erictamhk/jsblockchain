@@ -95,11 +95,11 @@
             <tbody>
               <tr>
                 <td class="bold">Sender</td>
-                <td>{{ transaction.sender }}</td>
+                <td>{{ transaction.fromAddress }}</td>
               </tr>
               <tr>
                 <td class="bold">Recipient</td>
-                <td>{{ transaction.recipient }}</td>
+                <td>{{ transaction.toAddress }}</td>
               </tr>
               <tr>
                 <td class="bold">Amount</td>
@@ -124,8 +124,8 @@
             </thead>
             <tbody>
               <tr ng-repeat="transaction in addressData.addressTransactions">
-                <td>{{ transaction.sender }}</td>
-                <td>{{ transaction.recipient }}</td>
+                <td>{{ transaction.fromAddress }}</td>
+                <td>{{ transaction.toAddress }}</td>
                 <td>{{ transaction.amount }}</td>
               </tr>
             </tbody>
